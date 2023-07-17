@@ -84,7 +84,7 @@ for var in pv_train.columns[3:]:
 np.save('outlier_imputer_dict',outlier_imputer_dict)    
 def outlier_imputer(df):
     #Loading Outlier Imputer dictionary
-    outlier_dict = np.load('outlier_imputer_dict.npy',allow_pickle='TRUE').item()
+    outlier_dict = np.load('outlier_imputer_dict.npy',allow_pickle=True).item()
     
     for var in df.columns[3:]:
         
@@ -113,9 +113,9 @@ pv_train_out.style
 
 
 ## ANN Model
-from keras.wrappers.scikit_learn import KerasRegressor
 from keras.models import Sequential
 from keras.layers import Dense
+#from keras.wrappers.scikit_learn import KerasRegressor as krsk
 
 def ANN():
     # 3 layer NN, 500 epochs, 4 batch size
@@ -126,7 +126,26 @@ def ANN():
     reg.compile(loss='mean_squared_error', optimizer='adam')
     return reg
 
-ann_reg = KerasRegressor(build_fn=ANN, nb_epoch=500, batch_size=4, verbose=False)
+
+import tensorflow as tf
+tfk = tf.keras
+tfk_models = tfk.models
+tfk_layers = tfk.layers
+tfk_callbacks = tfk.callbacks
+from scikeras.wrappers import KerasRegressor
+
+def ANN_tfk():
+    callback = tfk_callbacks.EarlyStopping(monitor='loss', patience=3)
+    reg = tfk_models.Sequential()
+    reg.add(tfk_layers.Dense(16, input_dim=5, activation='relu'))
+    reg.add(tfk_layers.Dense(8, kernel_initializer='normal', activation='relu'))
+    reg.add(tfk_layers.Dense(1))
+    reg.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+    return reg
+
+# ann_reg = krsk(build_fn=ANN, nb_epochs=500, batch_size=4, verbose=False)
+ann_reg = KerasRegressor(model=ANN_tfk, epochs=100, batch_size=10, verbose=1)
+# ann_reg = KerasRegressor(model=ANN_tfk, verbose=1)
 
 
 
@@ -156,12 +175,13 @@ pl_ada = Pipeline([('adaboost_regression', AdaBoostRegressor(random_state=0))])
 pl_bag = Pipeline([('bagging_regression', BaggingRegressor(random_state=0))])
 pl_grad = Pipeline([('gradboost_regression', GradientBoostingRegressor(random_state=0))])
 pl_grad_optimised = Pipeline([('gradboost_optimised', GradientBoostingRegressor(n_estimators=1577, min_samples_split=10, min_samples_leaf=1,
-                                                                                max_features='sqrt', max_depth=888, criterion='squared_error'))])
+                                                                                max_features='sqrt', max_depth=888, criterion='squared_error',
+                                                                                random_state=0))])
 pl_rf = Pipeline([('rf_regression', RandomForestRegressor(random_state=0))])
 # from xgboost
 pl_xgb = Pipeline([('xgboost_regression', XGBRegressor())])
 # from neural_network
-pl_ann_sk = Pipeline([('mlp_regressor', MLPRegressor())])
+pl_ann_sk = Pipeline([('mlp_regressor', MLPRegressor(hidden_layer_sizes=(16,8), early_stopping=True, verbose=True))])
 # created ann model
 pl_ann_keras = Pipeline([('ann_regressor', ann_reg)])
 
@@ -235,7 +255,8 @@ for j, model in enumerate(pipelines):
         scaler.transform(xvalid)
 
         model.fit(xtrain, ytrain)
-        rmse = np.sqrt(mean_squared_error(yvalid, model.predict(xvalid)))
+        # rmse = np.sqrt(mean_squared_error(yvalid, model.predict(xvalid)))
+        rmse = mean_squared_error(yvalid, model.predict(xvalid), squared=False)
         RMSE.append(rmse)
 
 
@@ -258,28 +279,28 @@ print(best_pipeline)
 x_train = pv_train_out[useful_cols]
 y_train = pv_train_out.P_GEN_MAX
 
-from sklearn.model_selection import RandomizedSearchCV
-n_estimators = [int(x) for x in np.linspace(start=100, stop=2000, num=10)]
-max_features = ['None', 'sqrt', 'log2']
-max_depth = [int(x) for x in np.linspace(0, 1000, 10)]
-min_samples_split = [2, 5, 10, 14]
-min_samples_leaf = [1, 2, 4, 6, 8]
-criterion = ['friedman_mse', 'squared_error']
-random_grid = {'n_estimators': n_estimators,
-               'max_features': max_features,
-               'max_depth': max_depth,
-               'min_samples_split': min_samples_split,
-               'min_samples_leaf': min_samples_leaf,
-               'criterion': criterion}
-gboost_rcv = RandomizedSearchCV(estimator=GradientBoostingRegressor(),
-                                param_distributions=random_grid,
-                                n_iter=100,
-                                verbose=2,
-                                random_state=30,
-                                n_jobs=-1)
-gboost_rcv.fit(x_train, y_train)
+# from sklearn.model_selection import RandomizedSearchCV
+# n_estimators = [int(x) for x in np.linspace(start=100, stop=2000, num=10)]
+# max_features = ['None', 'sqrt', 'log2']
+# max_depth = [int(x) for x in np.linspace(0, 1000, 10)]
+# min_samples_split = [2, 5, 10, 14]
+# min_samples_leaf = [1, 2, 4, 6, 8]
+# criterion = ['friedman_mse', 'squared_error']
+# random_grid = {'n_estimators': n_estimators,
+#                'max_features': max_features,
+#                'max_depth': max_depth,
+#                'min_samples_split': min_samples_split,
+#                'min_samples_leaf': min_samples_leaf,
+#                'criterion': criterion}
+# gboost_rcv = RandomizedSearchCV(estimator=GradientBoostingRegressor(),
+#                                 param_distributions=random_grid,
+#                                 n_iter=100,
+#                                 verbose=2,
+#                                 random_state=30,
+#                                 n_jobs=-1)
+# gboost_rcv.fit(x_train, y_train)
 
-print(gboost_rcv.best_params_)
+# print(gboost_rcv.best_params_)
 gboost_model = GradientBoostingRegressor(n_estimators=1577, min_samples_split=10, min_samples_leaf=1,
                                          max_features='sqrt', max_depth=888, criterion='squared_error')
 
@@ -301,4 +322,4 @@ print(f'Root Mean Squared Error for Test Data (Gradient Boosting Optimised): {np
 print(f'Root Mean Squared Error for Test Data (Gradient Boosting): {np.sqrt(mean_squared_error(y_test, y_pred_gb))}')
 
 
-from tensorflow import keras as tfk
+#from tensorflow import keras as tfk
