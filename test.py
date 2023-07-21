@@ -144,7 +144,7 @@ def ANN_tfk():
     return reg
 
 # ann_reg = krsk(build_fn=ANN, nb_epochs=500, batch_size=4, verbose=False)
-ann_reg = KerasRegressor(model=ANN_tfk, epochs=100, batch_size=10, verbose=1)
+ann_reg = KerasRegressor(model=ANN_tfk, epochs=100, batch_size=10, verbose=0)
 # ann_reg = KerasRegressor(model=ANN_tfk, verbose=1)
 
 
@@ -181,19 +181,24 @@ pl_rf = Pipeline([('rf_regression', RandomForestRegressor(random_state=0))])
 # from xgboost
 pl_xgb = Pipeline([('xgboost_regression', XGBRegressor())])
 # from neural_network
-pl_ann_sk = Pipeline([('mlp_regressor', MLPRegressor(hidden_layer_sizes=(16,8), early_stopping=True, verbose=True))])
+pl_ann_sk = Pipeline([('mlp_regressor', MLPRegressor(hidden_layer_sizes=(3), early_stopping=True,
+                                                     solver='lbfgs', verbose=False))])
 # created ann model
 pl_ann_keras = Pipeline([('ann_regressor', ann_reg)])
+pl_log = Pipeline([('logistic_regressor', LogisticRegression(random_state=0))])
 
 ## List of pipelines
 # pipelines = [pl_lr, pl_dt, pl_rf, pl_ridge, pl_lasso, pl_xgb, pl_ann,
 #              pl_lnet]
-pipelines = [pl_lr, pl_ridge, pl_lnet, pl_lars, pl_lasso, pl_lasso_lars, 
-             pl_dt, 
-             pl_ada, pl_bag, pl_grad, pl_grad_optimised, pl_rf, 
-             pl_xgb, 
-             pl_ann_sk,
-             pl_ann_keras]
+pipelines = [
+            pl_lr, pl_ridge, pl_lnet, pl_lars, pl_lasso, pl_lasso_lars, 
+            pl_dt, 
+            pl_ada, pl_bag, pl_grad, pl_grad_optimised, pl_rf, 
+            pl_xgb, 
+            pl_ann_sk,
+            pl_ann_keras
+            # pl_log
+             ]
 
 best_rmse = 100.0
 best_regressor = 0
@@ -202,21 +207,24 @@ best_pipeline = ""
 ## Dictionary of pipelines
 # pl_dict = {0:'Linear Regression',1: 'Decision Tree Regressor',2:'Random Forest Regressor',
 #              3:'Ridge Regressor',4:'Lasso Regressor',5:'XG Boost Regressor',6:'ANN Regressor',}
-pl_dict = {0: 'Linear Regression', 
-           1: 'Ridge Regressor', 
-           2: 'ElasticNet Regression',
-           3: 'Lars Regressor',
-           4: 'Lasso Regressor',
-           5: 'Lasso-Lars Regressor',
-           6: 'Decision Tree Regressor',
-           7: 'AdaBoost Regressor',
-           8: 'Bagging Regressor',
-           9: 'Gradient Boosting Regressor',
-           10: 'Gradient Boosting Regressor (Optimised)',
-           11: 'Random Forest Regressor',
-           12: 'XG Boost Regressor',
-           13: 'ANN Regressor (Sci-kit)',
-           14: 'ANN Regressor (Keras)'}
+pl_dict = {
+            0: 'Linear Regression', 
+            1: 'Ridge Regressor', 
+            2: 'ElasticNet Regression',
+            3: 'Lars Regressor',
+            4: 'Lasso Regressor',
+            5: 'Lasso-Lars Regressor',
+            6: 'Decision Tree Regressor',
+            7: 'AdaBoost Regressor',
+            8: 'Bagging Regressor',
+            9: 'Gradient Boosting Regressor',
+            10: 'Gradient Boosting Regressor (Optimised)',
+            11: 'Random Forest Regressor',
+            12: 'XG Boost Regressor',
+            13: 'ANN Regressor (Sci-kit)',
+            14: 'ANN Regressor (Keras)'
+            # 15: 'Logistic Regression'
+           }
 
 
 
@@ -279,28 +287,26 @@ print(best_pipeline)
 x_train = pv_train_out[useful_cols]
 y_train = pv_train_out.P_GEN_MAX
 
-# from sklearn.model_selection import RandomizedSearchCV
-# n_estimators = [int(x) for x in np.linspace(start=100, stop=2000, num=10)]
-# max_features = ['None', 'sqrt', 'log2']
-# max_depth = [int(x) for x in np.linspace(0, 1000, 10)]
-# min_samples_split = [2, 5, 10, 14]
-# min_samples_leaf = [1, 2, 4, 6, 8]
-# criterion = ['friedman_mse', 'squared_error']
-# random_grid = {'n_estimators': n_estimators,
-#                'max_features': max_features,
-#                'max_depth': max_depth,
-#                'min_samples_split': min_samples_split,
-#                'min_samples_leaf': min_samples_leaf,
-#                'criterion': criterion}
-# gboost_rcv = RandomizedSearchCV(estimator=GradientBoostingRegressor(),
-#                                 param_distributions=random_grid,
-#                                 n_iter=100,
-#                                 verbose=2,
-#                                 random_state=30,
-#                                 n_jobs=-1)
-# gboost_rcv.fit(x_train, y_train)
+from sklearn.model_selection import GridSearchCV
+n_estimators = [int(x) for x in np.linspace(start=100, stop=2000, num=10)]
+max_features = ['None', 'sqrt', 'log2']
+max_depth = [int(x) for x in np.linspace(0, 1000, 10)]
+min_samples_split = [2, 5, 10, 14]
+min_samples_leaf = [1, 2, 4, 6, 8]
+criterion = ['friedman_mse', 'squared_error']
+random_grid = {'n_estimators': n_estimators,
+               'max_features': max_features,
+               'max_depth': max_depth,
+               'min_samples_split': min_samples_split,
+               'min_samples_leaf': min_samples_leaf,
+               'criterion': criterion}
+gboost_gcv = GridSearchCV(estimator=GradientBoostingRegressor(random_state=0),
+                          param_grid=random_grid,
+                          n_jobs=-1,
+                          verbose=2)
+gboost_gcv.fit(x_train, y_train)
 
-# print(gboost_rcv.best_params_)
+print(gboost_gcv.best_params_)
 gboost_model = GradientBoostingRegressor(n_estimators=1577, min_samples_split=10, min_samples_leaf=1,
                                          max_features='sqrt', max_depth=888, criterion='squared_error')
 
@@ -320,6 +326,3 @@ y_pred_gb = gb_model.predict(x_test)
 
 print(f'Root Mean Squared Error for Test Data (Gradient Boosting Optimised): {np.sqrt(mean_squared_error(y_test, y_pred_gbo))}')
 print(f'Root Mean Squared Error for Test Data (Gradient Boosting): {np.sqrt(mean_squared_error(y_test, y_pred_gb))}')
-
-
-#from tensorflow import keras as tfk
