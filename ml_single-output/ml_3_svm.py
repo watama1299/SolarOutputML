@@ -29,7 +29,7 @@ pv_train.style
 ## Setup models
 # Decision Tree regression
 svm = LinearSVR(random_state=0)
-svm_nu = NuSVR(verbose=True)
+svm_nu = NuSVR()
 
 
 
@@ -38,19 +38,29 @@ x_train = pv_train[input_cols]
 y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
-nu = [x for x in np.linspace(start=0, stop=1, num=101)]
-kernel = ['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']
+loss = ['epsilon_insensitive', 'squared_epsilon_insensitive']
+max_iter = [1000, 5000, 10000]
+
+nu = [0.4, 0.43, 0.45]
+kernel = ['linear', 'rbf', 'sigmoid']
 gamma = ['scale', 'auto']
+cache_size = [200, 500, 1000]
 
 # Put all hyperparameter into a dict
 rg_svm = {
+    'loss': loss,
+    'max_iter': max_iter
+}
+
+rg_svm_nu = {
     'nu': nu,
     'kernel': kernel,
-    'gamma': gamma
+    'gamma': gamma,
+    'cache_size': cache_size
 }
 
 # Search thoroughly for optimised hyperparameter
-svm_gcv = GridSearchCV(estimator=svm_nu,
+svm_gcv = GridSearchCV(estimator=svm,
                         param_grid=rg_svm,
                         scoring='neg_root_mean_squared_error',
                         n_jobs=-1,
@@ -62,10 +72,28 @@ svm_gcv.fit(x_train, y_train)
 print(svm_gcv.best_params_)
 print('\n\n')
 
+svm_nu_gcv = GridSearchCV(estimator=svm_nu,
+                        param_grid=rg_svm_nu,
+                        scoring='neg_root_mean_squared_error',
+                        n_jobs=-1,
+                        cv=10,
+                        verbose=3)
+svm_nu_gcv.fit(x_train, y_train)
+
+# Print best hyperparameter
+print(svm_nu_gcv.best_params_)
+print('\n\n')
 
 
+
+## Training
 svm.fit(x_train, y_train)
-svm_nu_opt = NuSVR()
+svm_nu.fit(x_train, y_train)
+
+svm_opt = LinearSVR(random_state=0, loss='squared_epsilon_insensitive')
+svm_opt.fit(x_train, y_train)
+
+svm_nu_opt = NuSVR(nu=0.45, kernel='rbf', gamma='scale', cache_size=200)
 svm_nu_opt.fit(x_train, y_train)
 
 
@@ -75,9 +103,11 @@ x_test = pv_test[input_cols]
 y_test = pv_test.NRM_P_GEN_MAX
 
 y_pred_svm = svm.predict(x_test)
+y_pred_svm_opt = svm_opt.predict(x_test)
 y_pred_svm_nu = svm_nu.predict(x_test)
 y_pred_svm_nu_opt = svm_nu_opt.predict(x_test)
 
 print(f'RMSE for Test Data (Support Vector Regression): {mean_squared_error(y_test, y_pred_svm, squared=False)}')
+print(f'RMSE for Test Data (SVR Optimised): {mean_squared_error(y_test, y_pred_svm_opt, squared=False)}')
 print(f'RMSE for Test Data (NuSVR): {mean_squared_error(y_test, y_pred_svm_nu, squared=False)}')
 print(f'RMSE for Test Data (NuSVR Optimised): {mean_squared_error(y_test, y_pred_svm_nu_opt, squared=False)}')

@@ -8,7 +8,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression, Lasso, ElasticNet
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.svm import LinearSVR, NuSVR, SVR
+from sklearn.svm import LinearSVR, NuSVR
+from sklearn.neural_network import MLPRegressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import StratifiedKFold, cross_validate
@@ -38,48 +39,66 @@ model_ln = Pipeline([('lin_regression', LinearRegression())])
 # Tree regression
 model_dt = Pipeline([('dt_regression', DecisionTreeRegressor(random_state=0))])
 # Linear Support Vector regression
-model_svr = Pipeline([('svm_regression', SVR())])
+model_svr = Pipeline([('svm_regression', LinearSVR(random_state=0))])
 # Ensemble regression
 model_grb = Pipeline([('gradboost_regression', GradientBoostingRegressor(random_state=0))])
+# ANN model
+model_ann = Pipeline([('ann_sk', MLPRegressor(solver='adam', random_state=0,
+                                              shuffle=True, early_stopping=True))])
 models = [
     model_ln,
     model_dt,
     model_svr,
-    model_grb
+    model_grb,
+    model_ann
 ]
 reg_dict = {
     0: 'Linear',
     1: 'Decision Tree',
     2: 'SVM',
-    3: 'Grad Boost'
+    3: 'Grad Boost',
+    4: 'ANN'
 }
 
 ## With hyperparameter optimisation
 # Lasso regression
-model_lasso_opt = Pipeline([('lin_regression', Lasso(random_state= 0, max_iter=500, selection='cyclic'))])
+model_lasso_opt = Pipeline([('lasso_opt', Lasso(random_state= 0, max_iter=500, selection='cyclic'))])
 # ElasticNet regression
-model_eln_opt = Pipeline([('lin_regression', ElasticNet(random_state= 0, l1_ratio=0.2, max_iter=500, selection='cyclic'))])
+model_eln_opt = Pipeline([('eln_opt', ElasticNet(random_state= 0, l1_ratio=0.2, max_iter=500, selection='cyclic'))])
 # Tree regression
-model_dt_opt = Pipeline([('dt_regression', DecisionTreeRegressor(criterion='absolute_error', min_samples_leaf=28, min_samples_split=2, splitter='random', random_state= 0))])
+model_dt_opt = Pipeline([('dt_opt', DecisionTreeRegressor(criterion='absolute_error', min_samples_leaf=28,
+                                                          min_samples_split=2, splitter='random', random_state= 0))])
 # Linear Support Vector regression
-model_svr_opt = Pipeline([('svm_regression', LinearSVR(random_state= 0, loss='squared_epsilon_insensitive', max_iter=500))])
+model_svr_opt = Pipeline([('svm_opt', LinearSVR(random_state= 0, loss='squared_epsilon_insensitive', max_iter=1000))])
+# Nu Support Vector regression
+model_nusvr_opt = Pipeline([('nusvr_opt', NuSVR(nu=0.45, kernel='rbf', gamma='scale', cache_size=200))])
 # Ensemble regression
-model_grb_opt = Pipeline([('gradboost_regression', GradientBoostingRegressor(random_state=0))])
+model_grb_opt = Pipeline([('gradboost_opt', GradientBoostingRegressor(random_state=0, loss='squared_error',
+                                                                      criterion='friedman_mse', min_samples_split=2,
+                                                                      min_samples_leaf=10, n_estimators=100))])
+# ANN model
+model_ann_opt = Pipeline([('ann_sk_opt', MLPRegressor(hidden_layer_sizes=(10,10,), activation='logistic',
+                                                      solver='adam', random_state=0, max_iter=200,
+                                                      shuffle=True, early_stopping=True))])
 models_opt = [
     model_ln,
     model_lasso_opt,
     model_eln_opt,
     model_dt_opt,
     model_svr_opt,
-    model_grb_opt
+    model_nusvr_opt,
+    model_grb_opt,
+    model_ann_opt
 ]
 reg_opt_dict = {
     0: 'Linear',
     1: 'Lasso',
     2: 'ElasticNet',
     3: 'Decision Tree',
-    4: 'SVM',
-    5: 'Grad Boost'
+    4: 'Linear SVM',
+    5: 'Linear NuSVM',
+    6: 'Grad Boost',
+    7: 'ANN'
 }
 
 
@@ -123,10 +142,8 @@ def model_comparison(model_list, model_dict):
             rmse = mean_squared_error(yvalid, model.predict(xvalid), squared=False)
             RMSE.append(rmse)
 
-
         folds_mean_rmse = np.mean(RMSE)
         print('Mean Validation RMSE: {}\n'.format(folds_mean_rmse))
-
 
         if folds_mean_rmse < best_rmse:
             best_rmse = folds_mean_rmse
@@ -135,6 +152,7 @@ def model_comparison(model_list, model_dict):
 
     print('\nRegressor with least RMSE: {}'.format(model_dict[best_regressor]))
     print(best_pipeline)
+    print()
 
 ## Initial comparison
 model_comparison(models, reg_dict)

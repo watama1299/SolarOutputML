@@ -27,7 +27,7 @@ pv_train.style
 
 ## Setup models
 # Decision Tree regression
-gb = GradientBoostingRegressor(random_state=0, verbose=1)
+gb = GradientBoostingRegressor(random_state=0, loss='squared_error')
 
 
 
@@ -36,16 +36,17 @@ x_train = pv_train[input_cols]
 y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
-loss = ['squared_error', 'absolute_error', 'huber', 'quantile']
-n_estimators = [x for x in np.linspace(start=100, stop=1000, num=11)]
+n_estimators = [100, 250, 500]
 criterion = ['friedman_mse', 'squared_error']
+min_samples_split = [2, 5, 10, 15]
+min_samples_leaf = [1, 5, 10, 15, 20]
 
 # Put all hyperparameter into a dict
 random_grid = {
-    'loss': loss,
     'n_estimators': n_estimators,
     'criterion': criterion,
-
+    'min_samples_split': min_samples_split,
+    'min_samples_leaf': min_samples_leaf
 }
 
 # Search thoroughly for optimised hyperparameter
@@ -64,7 +65,7 @@ print('\n\n')
 
 
 gb.fit(x_train, y_train)
-gb_opt = GradientBoostingRegressor(random_state=0, verbose=1)
+gb_opt = GradientBoostingRegressor(random_state=0, loss='squared_error', criterion='friedman_mse', min_samples_split=2, min_samples_leaf=10, n_estimators=100)
 gb_opt.fit(x_train, y_train)
 
 
@@ -76,5 +77,5 @@ y_test = pv_test.NRM_P_GEN_MAX
 y_pred_gb = gb.predict(x_test)
 y_pred_gb_opt = gb_opt.predict(x_test)
 
-print(f'RMSE for Test Data (Support Vector Regression): {mean_squared_error(y_test, y_pred_gb, squared=False)}')
-print(f'RMSE for Test Data (NuSVR Optimised): {mean_squared_error(y_test, y_pred_gb_opt, squared=False)}')
+print(f'RMSE for Test Data (Gradient Boost): {mean_squared_error(y_test, y_pred_gb, squared=False)}')
+print(f'RMSE for Test Data (Gradient Boost Optimised): {mean_squared_error(y_test, y_pred_gb_opt, squared=False)}')
