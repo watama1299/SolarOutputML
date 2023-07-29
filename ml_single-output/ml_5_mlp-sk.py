@@ -37,8 +37,8 @@ y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
 hidden_layer_sizes = [(100,), (50,), (10,), (5,), (100,100,), (50,50,), (10,10,), (5,5,)]
-max_iter = [200, 500, 1000]
 activation = ['identity', 'logistic', 'tanh', 'relu']
+max_iter = [200, 500, 1000]
 
 
 # Put all hyperparameter into a dict
@@ -51,7 +51,8 @@ random_grid = {
 # Search thoroughly for optimised hyperparameter
 ann_sk_gcv = GridSearchCV(estimator=ann_sk,
                         param_grid=random_grid,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)

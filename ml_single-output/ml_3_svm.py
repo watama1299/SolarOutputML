@@ -29,7 +29,7 @@ pv_train.style
 ## Setup models
 # Decision Tree regression
 svm = LinearSVR(random_state=0)
-svm_nu = NuSVR()
+svm_nu = NuSVR(cache_size=1000, max_iter=-1)
 
 
 
@@ -39,30 +39,31 @@ y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
 loss = ['epsilon_insensitive', 'squared_epsilon_insensitive']
+dual = [True, False]
 max_iter = [1000, 5000, 10000]
 
-nu = [0.4, 0.43, 0.45]
+nu = [0.42, 0.43, 0.44]
 kernel = ['linear', 'rbf', 'sigmoid']
 gamma = ['scale', 'auto']
-cache_size = [200, 500, 1000]
 
 # Put all hyperparameter into a dict
 rg_svm = {
     'loss': loss,
+    'dual': dual,
     'max_iter': max_iter
 }
 
 rg_svm_nu = {
     'nu': nu,
     'kernel': kernel,
-    'gamma': gamma,
-    'cache_size': cache_size
+    'gamma': gamma
 }
 
 # Search thoroughly for optimised hyperparameter
 svm_gcv = GridSearchCV(estimator=svm,
                         param_grid=rg_svm,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -74,7 +75,8 @@ print('\n\n')
 
 svm_nu_gcv = GridSearchCV(estimator=svm_nu,
                         param_grid=rg_svm_nu,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -90,10 +92,10 @@ print('\n\n')
 svm.fit(x_train, y_train)
 svm_nu.fit(x_train, y_train)
 
-svm_opt = LinearSVR(random_state=0, loss='squared_epsilon_insensitive')
+svm_opt = LinearSVR(random_state=0, loss='squared_epsilon_insensitive', max_iter=1000)
 svm_opt.fit(x_train, y_train)
 
-svm_nu_opt = NuSVR(nu=0.45, kernel='rbf', gamma='scale', cache_size=200)
+svm_nu_opt = NuSVR(nu=0.43, kernel='rbf', gamma='scale', cache_size=200)
 svm_nu_opt.fit(x_train, y_train)
 
 

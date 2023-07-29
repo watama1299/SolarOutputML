@@ -28,7 +28,10 @@ pv_train.style
 
 ## Setup models
 # Decision Tree regression
-gb = MultiOutputRegressor(GradientBoostingRegressor(loss='squared_error', random_state=0, max_depth=None),
+gb = MultiOutputRegressor(GradientBoostingRegressor(loss='squared_error',
+                                                    random_state=0,
+                                                    max_depth=None,
+                                                    n_iter_no_change=10),
                           n_jobs=-1)
 
 
@@ -40,21 +43,24 @@ y_train = pv_train[output_cols]
 # Parameters to search through
 n_estimators = [100, 250, 500]
 criterion = ['friedman_mse', 'squared_error']
-min_samples_split = [2, 5, 10, 15]
-min_samples_leaf = [10, 11, 12, 13, 14]
+min_samples_split = [x for x in range(2,15,1)]
+min_samples_leaf = [1, 10, 50, 100, 150, 200, 250]
+max_features = ['sqrt', 'log2']
 
 # Put all hyperparameter into a dict
 random_grid = {
     'estimator__n_estimators': n_estimators,
     'estimator__criterion': criterion,
     'estimator__min_samples_split': min_samples_split,
-    'estimator__min_samples_leaf': min_samples_leaf
+    'estimator__min_samples_leaf': min_samples_leaf,
+    'estimator__max_features': max_features
 }
 
 # Search thoroughly for optimised hyperparameter
 gb_gcv = GridSearchCV(estimator=gb,
                         param_grid=random_grid,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -62,14 +68,19 @@ gb_gcv.fit(x_train, y_train)
 
 # Print best hyperparameter
 print(gb_gcv.best_params_)
+print(gb_gcv.best_estimator_)
 print('\n\n')
 
-
+# 14
+# 40
+# 80
+# 120
 
 gb.fit(x_train, y_train)
 gb_opt = MultiOutputRegressor(GradientBoostingRegressor(random_state=0, loss='squared_error',
-                                                        criterion='squared_error', min_samples_split=2,
-                                                        min_samples_leaf=14, n_estimators=100),
+                                                        criterion='friedman_mse', min_samples_split=2,
+                                                        min_samples_leaf=100, n_estimators=100,
+                                                        max_features='sqrt', n_iter_no_change=10),
                               n_jobs=-1)
 gb_opt.fit(x_train, y_train)
 

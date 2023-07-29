@@ -50,7 +50,8 @@ random_grid = {
 # Search thoroughly for optimised hyperparameter
 eln_gcv = GridSearchCV(estimator=eln,
                         param_grid=random_grid,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)

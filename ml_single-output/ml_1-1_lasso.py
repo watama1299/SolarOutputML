@@ -50,7 +50,8 @@ random_grid = {
 # Search thoroughly for optimised hyperparameter
 lasso_gcv = GridSearchCV(estimator=lasso,
                         param_grid=random_grid,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -64,7 +65,7 @@ print('\n\n')
 
 ln.fit(x_train, y_train)
 lasso.fit(x_train, y_train)
-lasso_opt = Lasso(random_state= 0, max_iter=500, selection='cyclic')
+lasso_opt = Lasso(random_state=0, max_iter=500, selection='cyclic')
 lasso_opt.fit(x_train, y_train)
 
 

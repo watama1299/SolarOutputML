@@ -6,8 +6,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.linear_model import LinearRegression, Lasso
-from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression, Lasso, MultiTaskLasso
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import GridSearchCV
 
 
@@ -33,6 +33,7 @@ pv_train.style
 ln = MultiOutputRegressor(LinearRegression(), n_jobs=-1)
 # Lasso regression
 lasso = MultiOutputRegressor(Lasso(random_state= 0), n_jobs=-1)
+ls = MultiTaskLasso(random_state=0)
 
 
 
@@ -49,11 +50,16 @@ random_grid = {
     'estimator__max_iter': max_iter,
     'estimator__selection': selection,
 }
+rg = {
+    'max_iter': max_iter,
+    'selection': selection
+}
 
 # Search thoroughly for optimised hyperparameter
 lasso_gcv = GridSearchCV(estimator=lasso,
                         param_grid=random_grid,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -61,6 +67,22 @@ lasso_gcv.fit(x_train, y_train)
 
 # Print best hyperparameter
 print(lasso_gcv.best_params_)
+print(lasso_gcv.best_estimator_)
+print('\n\n')
+
+# Search thoroughly for optimised hyperparameter
+ls_gcv = GridSearchCV(estimator=ls,
+                        param_grid=rg,
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
+                        n_jobs=-1,
+                        cv=10,
+                        verbose=3)
+ls_gcv.fit(x_train, y_train)
+
+# Print best hyperparameter
+print(ls_gcv.best_params_)
+print(ls_gcv.best_estimator_)
 print('\n\n')
 
 
@@ -70,6 +92,9 @@ lasso.fit(x_train, y_train)
 lasso_opt = MultiOutputRegressor(Lasso(random_state= 0, max_iter=500, selection='cyclic'),
                                  n_jobs=-1)
 lasso_opt.fit(x_train, y_train)
+ls.fit(x_train, y_train)
+ls_opt = MultiTaskLasso(max_iter=500,random_state=0,selection='cyclic')
+ls_opt.fit(x_train, y_train)
 
 
 
@@ -79,8 +104,12 @@ y_test = pv_test[output_cols]
 
 y_pred_ln = ln.predict(x_test)
 y_pred_lasso = lasso.predict(x_test)
+y_pred_ls = ls.predict(x_test)
 y_pred_lasso_opt = lasso_opt.predict(x_test)
+y_pred_ls_opt = ls_opt.predict(x_test)
 
 print(f'Root Mean Squared Error for Test Data (Linear): {mean_squared_error(y_test, y_pred_ln, squared=False)}')
 print(f'Root Mean Squared Error for Test Data (Lasso): {mean_squared_error(y_test, y_pred_lasso, squared=False)}')
 print(f'Root Mean Squared Error for Test Data (Lasso Optimised): {mean_squared_error(y_test, y_pred_lasso_opt, squared=False)}')
+print(f'Root Mean Squared Error for Test Data (MultiLasso): {mean_squared_error(y_test, y_pred_ls, squared=False)}')
+print(f'Root Mean Squared Error for Test Data (MultiLasso Optimised): {mean_squared_error(y_test, y_pred_ls_opt, squared=False)}')

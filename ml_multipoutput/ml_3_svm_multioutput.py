@@ -42,7 +42,8 @@ loss = ['epsilon_insensitive', 'squared_epsilon_insensitive']
 dual = [True, False]
 max_iter = [1000, 2000, 3000]
 
-nu = [0.43, 0.44, 0.45]
+# nu = [0.43, 0.44, 0.45]
+nu = [0.5, 0.55, 0.6]
 kernel = ['linear', 'rbf', 'sigmoid']
 gamma = ['scale', 'auto']
 cache_size = [200, 500, 1000]
@@ -57,14 +58,14 @@ rg_svm = {
 rg_svm_nu = {
     'estimator__nu': nu,
     'estimator__kernel': kernel,
-    'estimator__gamma': gamma,
-    'estimator__cache_size': cache_size
+    'estimator__gamma': gamma
 }
 
 # Search thoroughly for optimised hyperparameter
 svm_gcv = GridSearchCV(estimator=svm,
                         param_grid=rg_svm,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -72,11 +73,13 @@ svm_gcv.fit(x_train, y_train)
 
 # Print best hyperparameter
 print(svm_gcv.best_params_)
+print(svm_gcv.best_estimator_)
 print('\n\n')
 
 svm_nu_gcv = GridSearchCV(estimator=svm_nu,
                         param_grid=rg_svm_nu,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -84,6 +87,7 @@ svm_nu_gcv.fit(x_train, y_train)
 
 # Print best hyperparameter
 print(svm_nu_gcv.best_params_)
+print(svm_nu_gcv.best_estimator_)
 print('\n\n')
 
 
@@ -98,7 +102,7 @@ svm_opt = MultiOutputRegressor(LinearSVR(random_state=0,
                                n_jobs=-1)
 svm_opt.fit(x_train, y_train)
 
-svm_nu_opt = MultiOutputRegressor(NuSVR(nu=0.45, kernel='rbf',
+svm_nu_opt = MultiOutputRegressor(NuSVR(nu=0.5, kernel='rbf',
                                         gamma='scale', cache_size=200),
                                   n_jobs=-1)
 svm_nu_opt.fit(x_train, y_train)

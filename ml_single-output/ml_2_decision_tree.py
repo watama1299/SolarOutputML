@@ -38,19 +38,22 @@ criterion = ['squared_error', 'friedman_mse', 'absolute_error', 'poisson']
 splitter = ['best', 'random']
 min_samples_split = [x for x in range(2,15,1)]
 min_samples_leaf = [x for x in range(1,50,1)]
+max_features = ['sqrt', 'log2', None]
 
 # Put all hyperparameter into a dict
 random_grid = {
     'criterion': criterion,
     'splitter': splitter,
     'min_samples_split': min_samples_split,
-    'min_samples_leaf': min_samples_leaf
+    'min_samples_leaf': min_samples_leaf,
+    'max_features': max_features
 }
 
 # Search thoroughly for optimised hyperparameter
 dt_gcv = GridSearchCV(estimator=dt,
                         param_grid=random_grid,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -63,7 +66,12 @@ print('\n\n')
 
 
 dt.fit(x_train, y_train)
-dt_opt = DecisionTreeRegressor(criterion='absolute_error', min_samples_leaf=28, min_samples_split=2, splitter='random', random_state= 0)
+dt_opt = DecisionTreeRegressor(criterion='squared_error',
+                               max_features=None,
+                               min_samples_leaf=28,
+                               min_samples_split=2,
+                               splitter='random',
+                               random_state= 0)
 dt_opt.fit(x_train, y_train)
 
 

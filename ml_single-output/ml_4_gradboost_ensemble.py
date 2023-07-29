@@ -27,7 +27,7 @@ pv_train.style
 
 ## Setup models
 # Decision Tree regression
-gb = GradientBoostingRegressor(random_state=0, loss='squared_error')
+gb = GradientBoostingRegressor(random_state=0, max_depth=None, n_iter_no_change=10)
 
 
 
@@ -36,23 +36,28 @@ x_train = pv_train[input_cols]
 y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
+loss = ['squared_error', 'absolute_error', 'huber', 'quantile']
 n_estimators = [100, 250, 500]
 criterion = ['friedman_mse', 'squared_error']
-min_samples_split = [2, 5, 10, 15]
-min_samples_leaf = [1, 5, 10, 15, 20]
+min_samples_split = [x for x in range(2,15,1)]
+min_samples_leaf = [200, 250, 300]
+max_features = ['sqrt', 'log2', None]
 
 # Put all hyperparameter into a dict
 random_grid = {
+    'loss': loss,
     'n_estimators': n_estimators,
     'criterion': criterion,
     'min_samples_split': min_samples_split,
-    'min_samples_leaf': min_samples_leaf
+    'min_samples_leaf': min_samples_leaf,
+    'max_features': max_features
 }
 
 # Search thoroughly for optimised hyperparameter
 gb_gcv = GridSearchCV(estimator=gb,
                         param_grid=random_grid,
-                        scoring='neg_root_mean_squared_error',
+                        scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
+                        refit='neg_root_mean_squared_error',
                         n_jobs=-1,
                         cv=10,
                         verbose=3)
@@ -65,7 +70,7 @@ print('\n\n')
 
 
 gb.fit(x_train, y_train)
-gb_opt = GradientBoostingRegressor(random_state=0, loss='squared_error', criterion='friedman_mse', min_samples_split=2, min_samples_leaf=10, n_estimators=100)
+gb_opt = GradientBoostingRegressor(random_state=0, loss='huber', criterion='friedman_mse', min_samples_split=200, min_samples_leaf=10, n_estimators=100)
 gb_opt.fit(x_train, y_train)
 
 
