@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 ## Read csv files
-pv_combined = pd.read_csv('YMCA_combined.csv')
+pv_combined = pd.read_csv('YMCA_data_combined.csv')
 print(pv_combined.describe())
 
 
