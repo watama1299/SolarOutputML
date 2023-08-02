@@ -21,9 +21,9 @@ from sklearn.neural_network import MLPRegressor
 
 
 ## Import data
-pv_train = pd.read_csv('YMCA_train.csv')
-pv_test = pd.read_csv('YMCA_test.csv')
-pv_test2 = pd.read_csv('FR_test.csv')
+pv_train = pd.read_csv('YMCA_data_train.csv')
+pv_test = pd.read_csv('YMCA_data_test.csv')
+pv_test2 = pd.read_csv('FR_data_test.csv')
 
 input_cols = ['TempOut', 'OutHum', 'WindSpeed', 'Bar', 'SolarRad']
 output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
@@ -66,8 +66,8 @@ models = [
 reg_dict = {
     0: 'Linear',
     1: 'Decision Tree',
-    2: 'SVM',
-    3: 'Gradient Boost Decision Tree',
+    2: 'Linear SVM',
+    3: 'Gradient Boost',
     4: 'ANN'
 }
 
@@ -105,7 +105,7 @@ model_svr_opt = Pipeline([('svm_opt', MultiOutputRegressor(LinearSVR(loss='squar
                                                                      max_iter=1000),
                                                            n_jobs=-1))])
 # Nu Support Vector regression
-model_nusvr_opt = Pipeline([('nusvr_opt', MultiOutputRegressor(NuSVR(nu=0.5,
+model_nusvr_opt = Pipeline([('nusvr_opt', MultiOutputRegressor(NuSVR(nu=0.42,
                                                                      kernel='rbf',
                                                                      gamma='scale',
                                                                      cache_size=1000,
@@ -144,14 +144,14 @@ models_opt = [
 ]
 reg_opt_dict = {
     0: 'Linear',
-    1: 'Linear - Lasso',
-    2: 'Linear - MultiLasso',
-    3: 'Linear - ElasticNet',
-    4: 'Linear - MultiElasticNet',
+    1: 'Lasso',
+    2: 'MultiLasso',
+    3: 'ElasticNet',
+    4: 'MultiElasticNet',
     5: 'Decision Tree',
     6: 'Linear SVM',
     7: 'NuSVM',
-    8: 'Gradient Boost Decision Tree',
+    8: 'Gradient Boost',
     9: 'ANN'
 }
 
@@ -259,29 +259,6 @@ def model_comparison(model_list, model_dict, data_train, data_test):
                 print('New best MAE model fit found: Fold {}'.format(i+1))
                 # print(i)
             
-            """
-            ## Testing dataset
-            xtrain = data_test[data_test['kfold'] != i]
-            xvalid = data_test[data_test['kfold'] == i]
-
-            ytrain = xtrain[output_cols]
-            yvalid = xvalid[output_cols]
-
-            xtrain = xtrain[input_cols]
-            xvalid = xvalid[input_cols]
-
-            scaler = StandardScaler()
-            scaler.fit_transform(xtrain)
-            scaler.transform(xvalid)
-
-            # predict testing dataset (no need training since done previously)
-            ypred = model.predict(xvalid)
-            rmse = mean_squared_error(yvalid, ypred, squared=False)
-            RMSE_test.append(rmse)
-            mae = mean_absolute_error(yvalid, ypred)
-            MAE_test.append(mae)
-            """
-
 
 
         ## Printing training and testing scoring for each model
@@ -356,8 +333,10 @@ def model_comparison(model_list, model_dict, data_train, data_test):
 
 
         ## Determining best model according to testing scoring
-        test_rmse = min(model_rmse)
-        test_mae = min(model_mae)
+        # test_rmse = min(model_rmse)
+        # test_mae = min(model_mae)
+        test_rmse = yn_rmse
+        test_mae = yn_mae
 
         if test_rmse < best_rmse and test_mae < best_mae:
             best_rmse = test_rmse
@@ -403,9 +382,11 @@ print('-----------------------------------------------------')
 print('Initial comparison')
 print('-----------------------------------------------------')
 out_models_init = model_comparison(models, reg_dict, pv_train, pv_test)
-best_model_init = p.loads(out_models_init.get('Gradient Boost Decision Tree').get('normal'))
-# best_model_init = p.loads(out_models_init.get('Gradient Boost Decision Tree').get('normal'))
-# best_model_init = p.loads(out_models_init.get('Gradient Boost Decision Tree').get('normal'))
+# best_model_init = p.loads(out_models_init.get('Linear').get('normal'))
+# best_model_init = p.loads(out_models_init.get('Decision Tree').get('normal'))
+# best_model_init = p.loads(out_models_init.get('Linear SVM').get('normal'))
+# best_model_init = p.loads(out_models_init.get('Gradient Boost').get('normal'))
+best_model_init = p.loads(out_models_init.get('ANN').get('normal'))
 y_init = best_model_init.predict(pv_test[input_cols])
 y_init = pd.DataFrame(y_init, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
 # y_init.to_csv('y_init_mo.csv', index=False)
@@ -415,9 +396,16 @@ print('-----------------------------------------------------')
 print('Optimised comparison')
 print('-----------------------------------------------------')
 out_models_opt = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test)
-best_model_opt = p.loads(out_models_opt.get('Decision Tree').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('Linear').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('Lasso').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('MultiLasso').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('ElasticNet').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('MultiElasticNet').get('normal'))
 # best_model_opt = p.loads(out_models_opt.get('Decision Tree').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('Decision Tree').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('Linear SVM').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('NuSVM').get('normal'))
+# best_model_opt = p.loads(out_models_opt.get('Gradient Boost').get('normal'))
+best_model_opt = p.loads(out_models_opt.get('ANN').get('normal'))
 y_opt = best_model_opt.predict(pv_test[input_cols])
 y_opt = pd.DataFrame(y_opt, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
 # y_opt.to_csv('y_opt_mo.csv', index=False)
@@ -427,9 +415,16 @@ print('-----------------------------------------------------')
 print('Optimised models trained on YMCA, tested on FR')
 print('-----------------------------------------------------')
 out_models_fr = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test2)
-best_model_fr = p.loads(out_models_fr.get('Linear').get('normal'))
 # best_model_fr = p.loads(out_models_fr.get('Linear').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('Linear').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('Lasso').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('MultiLasso').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('ElasticNet').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('MultiElasticNet').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('Decision Tree').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('Linear SVM').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('NuSVM').get('normal'))
+# best_model_fr = p.loads(out_models_fr.get('Gradient Boost').get('normal'))
+best_model_fr = p.loads(out_models_fr.get('ANN').get('normal'))
 y_fr = best_model_fr.predict(pv_test2[input_cols])
 y_fr = pd.DataFrame(y_fr, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
 # y_fr.to_csv('y_fr_mo.csv', index=False)

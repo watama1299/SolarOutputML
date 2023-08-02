@@ -29,12 +29,13 @@ pv_train.style
 ## Setup models
 # Decision Tree regression
 svm = LinearSVR(random_state=0)
-svm_nu = NuSVR(cache_size=1000, max_iter=-1)
+svm_nu = NuSVR(cache_size=8000, max_iter=100000)
 
 
 
 ## Hyperparameter Optimisation
 x_train = pv_train[input_cols]
+# y_train = pv_train.NRM_P_GEN_MIN
 y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
@@ -42,7 +43,7 @@ loss = ['epsilon_insensitive', 'squared_epsilon_insensitive']
 dual = [True, False]
 max_iter = [1000, 5000, 10000]
 
-nu = [0.42, 0.43, 0.44]
+nu = [x for x in np.linspace(start=0, stop=1, num=101)]
 kernel = ['linear', 'rbf', 'sigmoid']
 gamma = ['scale', 'auto']
 
@@ -102,6 +103,7 @@ svm_nu_opt.fit(x_train, y_train)
 
 ## Predicting
 x_test = pv_test[input_cols]
+# y_test = pv_test.NRM_P_GEN_MIN
 y_test = pv_test.NRM_P_GEN_MAX
 
 y_pred_svm = svm.predict(x_test)

@@ -35,7 +35,8 @@ lasso = Lasso(random_state= 0)
 
 ## Hyperparameter Optimisation
 x_train = pv_train[input_cols]
-y_train = pv_train.NRM_P_GEN_MAX
+y_train = pv_train.NRM_P_GEN_MIN
+# y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
 max_iter = [500, 1000, 2000, 5000]
@@ -72,7 +73,8 @@ lasso_opt.fit(x_train, y_train)
 
 ## Predicting
 x_test = pv_test[input_cols]
-y_test = pv_test.NRM_P_GEN_MAX
+y_test = pv_test.NRM_P_GEN_MIN
+# y_test = pv_test.NRM_P_GEN_MAX
 
 y_pred_ln = ln.predict(x_test)
 y_pred_lasso = lasso.predict(x_test)

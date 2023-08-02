@@ -33,7 +33,8 @@ eln = ElasticNet(random_state= 0)
 
 ## Hyperparameter Optimisation
 x_train = pv_train[input_cols]
-y_train = pv_train.NRM_P_GEN_MAX
+y_train = pv_train.NRM_P_GEN_MIN
+# y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
 l1_ratio = [x for x in np.linspace(start=0, stop=1, num=101)]
@@ -66,13 +67,15 @@ print('\n\n')
 ln.fit(x_train, y_train)
 eln.fit(x_train, y_train)
 eln_opt = ElasticNet(random_state= 0, l1_ratio=0.2, max_iter=500, selection='cyclic')
+# eln_opt = ElasticNet(random_state= 0, l1_ratio=0.01, max_iter=500, selection='random')
 eln_opt.fit(x_train, y_train)
 
 
 
 ## Predicting
 x_test = pv_test[input_cols]
-y_test = pv_test.NRM_P_GEN_MAX
+y_test = pv_test.NRM_P_GEN_MIN
+# y_test = pv_test.NRM_P_GEN_MAX
 
 y_pred_ln = ln.predict(x_test)
 y_pred_eln = eln.predict(x_test)

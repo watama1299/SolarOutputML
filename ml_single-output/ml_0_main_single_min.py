@@ -17,9 +17,9 @@ from sklearn.neural_network import MLPRegressor
 
 
 ## Import data
-pv_train = pd.read_csv('YMCA_train.csv')
-pv_test = pd.read_csv('YMCA_test.csv')
-pv_test2 = pd.read_csv('FR_test.csv')
+pv_train = pd.read_csv('YMCA_data_train.csv')
+pv_test = pd.read_csv('YMCA_data_test.csv')
+pv_test2 = pd.read_csv('FR_data_test.csv')
 
 input_cols = ['TempOut', 'OutHum', 'WindSpeed', 'Bar', 'SolarRad']
 output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
@@ -71,16 +71,16 @@ model_lasso_opt = Pipeline([('lasso_opt', Lasso(max_iter=500,
                                                 random_state=0,
                                                 selection='cyclic'))])
 # ElasticNet regression
-model_eln_opt = Pipeline([('eln_opt', ElasticNet(l1_ratio=0.2,
+model_eln_opt = Pipeline([('eln_opt', ElasticNet(l1_ratio=0.01,
                                                  max_iter=500,
                                                  random_state=0,
-                                                 selection='cyclic'))])
+                                                 selection='random'))])
 # Tree regression
 model_dt_opt = Pipeline([('dt_opt', DecisionTreeRegressor(criterion='squared_error',
                                                           splitter='random',
                                                           max_depth=None,
                                                           min_samples_split=2,
-                                                          min_samples_leaf=28,
+                                                          min_samples_leaf=34,
                                                           max_features=None,
                                                           random_state=0))])
 # Linear Support Vector regression
@@ -89,22 +89,22 @@ model_svr_opt = Pipeline([('svm_opt', LinearSVR(loss='squared_epsilon_insensitiv
                                                 random_state=0,
                                                 max_iter=1000))])
 # Nu Support Vector regression
-model_nusvr_opt = Pipeline([('nusvr_opt', NuSVR(nu=0.43,
+model_nusvr_opt = Pipeline([('nusvr_opt', NuSVR(nu=0.64,
                                                 kernel='rbf',
                                                 gamma='scale',
                                                 cache_size=1000))])
 # Ensemble regression
-model_grb_opt = Pipeline([('gradboost_opt', GradientBoostingRegressor(loss='huber',
+model_grb_opt = Pipeline([('gradboost_opt', GradientBoostingRegressor(loss='squared_error',
                                                                       n_estimators=100,
                                                                       criterion='friedman_mse',
-                                                                      min_samples_split=200,
-                                                                      min_samples_leaf=10,
+                                                                      min_samples_split=2,
+                                                                      min_samples_leaf=200,
                                                                       max_depth=None,
                                                                       random_state=0,
                                                                       max_features=None,
                                                                       n_iter_no_change=10))])
 # ANN model
-model_ann_opt = Pipeline([('ann_sk_opt', MLPRegressor(hidden_layer_sizes=(10,10,),
+model_ann_opt = Pipeline([('ann_sk_opt', MLPRegressor(hidden_layer_sizes=(100,),
                                                       activation='logistic',
                                                       solver='adam',
                                                       max_iter=200,
@@ -320,8 +320,10 @@ def model_comparison(model_list, model_dict, data_train, data_test, max_or_min):
 
 
         ## Determining best model according to testing scoring
-        test_rmse = min(model_rmse)
-        test_mae = min(model_mae)
+        # test_rmse = min(model_rmse)
+        # test_mae = min(model_mae)
+        test_rmse = yn_rmse
+        test_mae = yn_mae
 
         if test_rmse < best_rmse and test_mae < best_mae:
             best_rmse = test_rmse
@@ -371,21 +373,14 @@ print('-----------------------------------------------------')
 print('Initial comparison')
 print('-----------------------------------------------------')
 out_models_init_min = model_comparison(models, reg_dict, pv_train, pv_test, 'min')
+# best_model_init_min = p.loads(out_models_init_min.get('Linear').get('normal'))
+# best_model_init_min = p.loads(out_models_init_min.get('Decision Tree').get('normal'))
+# best_model_init_min = p.loads(out_models_init_min.get('Linear SVM').get('normal'))
 # best_model_init_min = p.loads(out_models_init_min.get('Grad Boost').get('normal'))
-# best_model_init_min = p.loads(out_models_init_min.get('Linear').get('overall_best'))
-best_model_init_min = p.loads(out_models_init_min.get('Linear SVM').get('overall_best'))
+best_model_init_min = p.loads(out_models_init_min.get('ANN').get('normal'))
 y_init = best_model_init_min.predict(pv_test[input_cols])
 y_min_init = pd.DataFrame(y_init, columns=['PRED_NRM_P_GEN_MIN'])
 y_min_init.to_csv('y_init_min_s.csv', index=False)
-
-out_models_init_max = model_comparison(models, reg_dict, pv_train, pv_test, 'max')
-# best_model_init_max = p.loads(out_models_init_max.get('Grad Boost').get('normal'))
-# best_model_init_max = p.loads(out_models_init_max.get('Linear').get('overall_best'))
-best_model_init_max = p.loads(out_models_init_max.get('Linear SVM').get('overall_best'))
-y_init = best_model_init_max.predict(pv_test[input_cols])
-y_max_init = pd.DataFrame(y_init, columns=['PRED_NRM_P_GEN_MAX'])
-y_max_init.to_csv('y_init_max_s.csv', index=False)
-
 
 
 ## Optimised comparison
@@ -393,22 +388,17 @@ print('-----------------------------------------------------')
 print('Optimised comparison')
 print('-----------------------------------------------------')
 out_models_opt_min = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test, 'min')
-# best_model_opt_min = p.loads(out_models_opt_min.get('Grad Boost').get('normal'))
-# best_model_opt_min = p.loads(out_models_opt_min.get('ANN').get('normal'))
+# best_model_opt_min = p.loads(out_models_opt_min.get('Linear').get('normal'))
+# best_model_opt_min = p.loads(out_models_opt_min.get('Lasso').get('normal'))
+# best_model_opt_min = p.loads(out_models_opt_min.get('ElasticNet').get('normal'))
+# best_model_opt_min = p.loads(out_models_opt_min.get('Decision Tree').get('normal'))
+# best_model_opt_min = p.loads(out_models_opt_min.get('Linear SVM').get('normal'))
 # best_model_opt_min = p.loads(out_models_opt_min.get('NuSVM').get('normal'))
-best_model_opt_min = p.loads(out_models_opt_min.get('Decision Tree').get('normal'))
+# best_model_opt_min = p.loads(out_models_opt_min.get('Grad Boost').get('normal'))
+best_model_opt_min = p.loads(out_models_opt_min.get('ANN').get('normal'))
 y_opt = best_model_opt_min.predict(pv_test[input_cols])
 y_min_opt = pd.DataFrame(y_opt, columns=['PRED_NRM_P_GEN_MIN'])
 y_min_opt.to_csv('y_opt_min_s.csv', index=False)
-
-out_models_opt_max = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test, 'max')
-# best_model_opt_max = p.loads(out_models_opt_max.get('Grad Boost').get('normal'))
-# best_model_opt_max = p.loads(out_models_opt_max.get('ANN').get('normal'))
-# best_model_opt_max = p.loads(out_models_opt_max.get('NuSVM').get('normal'))
-best_model_opt_max = p.loads(out_models_opt_max.get('Decision Tree').get('normal'))
-y_opt = best_model_opt_max.predict(pv_test[input_cols])
-y_max_opt = pd.DataFrame(y_opt, columns=['PRED_NRM_P_GEN_MAX'])
-y_max_opt.to_csv('y_opt_max_s.csv', index=False)
 
 
 
@@ -417,21 +407,14 @@ print('-----------------------------------------------------')
 print('Optimised models trained on YMCA, tested on FR')
 print('-----------------------------------------------------')
 out_models_fr_min = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test2, 'min')
-# best_model_fr_min = p.loads(out_models_fr_min.get('ANN').get('overall_best'))
-# best_model_fr_min = p.loads(out_models_fr_min.get('ElasticNet').get('normal'))
 # best_model_fr_min = p.loads(out_models_fr_min.get('Linear').get('normal'))
 # best_model_fr_min = p.loads(out_models_fr_min.get('Lasso').get('normal'))
-best_model_fr_min = p.loads(out_models_fr_min.get('Linear SVM').get('normal'))
+# best_model_fr_min = p.loads(out_models_fr_min.get('ElasticNet').get('normal'))
+# best_model_fr_min = p.loads(out_models_fr_min.get('Decision Tree').get('normal'))
+# best_model_fr_min = p.loads(out_models_fr_min.get('Linear SVM').get('normal'))
+# best_model_fr_min = p.loads(out_models_fr_min.get('NuSVM').get('normal'))
+# best_model_fr_min = p.loads(out_models_fr_min.get('Grad Boost').get('normal'))
+best_model_fr_min = p.loads(out_models_fr_min.get('ANN').get('overall_best'))
 y_fr = best_model_fr_min.predict(pv_test2[input_cols])
 y_min_fr = pd.DataFrame(y_fr, columns=['PRED_NRM_P_GEN_MIN'])
 y_min_fr.to_csv('y_min_fr_s.csv', index=False)
-
-out_models_fr_max = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test2, 'max')
-# best_model_fr_max = p.loads(out_models_fr_max.get('ANN').get('overall_best'))
-# best_model_fr_max = p.loads(out_models_fr_max.get('ElasticNet').get('normal'))
-# best_model_fr_max = p.loads(out_models_fr_max.get('Linear').get('normal'))
-# best_model_fr_max = p.loads(out_models_fr_max.get('Lasso').get('normal'))
-best_model_fr_max = p.loads(out_models_fr_max.get('Linear SVM').get('normal'))
-y_fr = best_model_fr_max.predict(pv_test2[input_cols])
-y_min_fr = pd.DataFrame(y_fr, columns=['PRED_NRM_P_GEN_MAX'])
-y_min_fr.to_csv('y_max_fr_s.csv', index=False)

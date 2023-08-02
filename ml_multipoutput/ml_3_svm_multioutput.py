@@ -29,7 +29,7 @@ pv_train.style
 ## Setup models
 # Decision Tree regression
 svm = MultiOutputRegressor(LinearSVR(random_state=0), n_jobs=-1)
-svm_nu = MultiOutputRegressor(NuSVR(cache_size=1000, max_iter=-1), n_jobs=-1)
+svm_nu = MultiOutputRegressor(NuSVR(cache_size=1000, max_iter=100000), n_jobs=-1)
 
 
 
@@ -43,7 +43,7 @@ dual = [True, False]
 max_iter = [1000, 2000, 3000]
 
 # nu = [0.43, 0.44, 0.45]
-nu = [0.5, 0.55, 0.6]
+nu = [x for x in np.linspace(start=0, stop=1, num=101)]
 kernel = ['linear', 'rbf', 'sigmoid']
 gamma = ['scale', 'auto']
 cache_size = [200, 500, 1000]

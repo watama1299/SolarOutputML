@@ -33,6 +33,7 @@ gb = GradientBoostingRegressor(random_state=0, max_depth=None, n_iter_no_change=
 
 ## Hyperparameter Optimisation
 x_train = pv_train[input_cols]
+# y_train = pv_train.NRM_P_GEN_MIN
 y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
@@ -70,14 +71,15 @@ print('\n\n')
 
 
 gb.fit(x_train, y_train)
-gb_opt = GradientBoostingRegressor(random_state=0, loss='huber', criterion='friedman_mse', min_samples_split=200, min_samples_leaf=10, n_estimators=100)
+gb_opt = GradientBoostingRegressor(random_state=0, loss='huber', criterion='friedman_mse', min_samples_split=2, min_samples_leaf=200, n_estimators=100)
 gb_opt.fit(x_train, y_train)
 
 
 
 ## Predicting
 x_test = pv_test[input_cols]
-y_test = pv_test.NRM_P_GEN_MAX
+y_test = pv_test.NRM_P_GEN_MIN
+# y_test = pv_test.NRM_P_GEN_MAX
 
 y_pred_gb = gb.predict(x_test)
 y_pred_gb_opt = gb_opt.predict(x_test)

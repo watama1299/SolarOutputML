@@ -33,7 +33,8 @@ ann_sk = MLPRegressor(solver='adam', random_state=0,
 
 ## Hyperparameter Optimisation
 x_train = pv_train[input_cols]
-y_train = pv_train.NRM_P_GEN_MAX
+y_train = pv_train.NRM_P_GEN_MIN
+# y_train = pv_train.NRM_P_GEN_MAX
 
 # Parameters to search through
 hidden_layer_sizes = [(100,), (50,), (10,), (5,), (100,100,), (50,50,), (10,10,), (5,5,)]
@@ -65,7 +66,7 @@ print('\n\n')
 
 
 ann_sk.fit(x_train, y_train)
-ann_sk_opt = MLPRegressor(hidden_layer_sizes=(100,100,), activation='logistic', 
+ann_sk_opt = MLPRegressor(hidden_layer_sizes=(10,10,), activation='logistic', 
                           solver='adam', max_iter=200, shuffle=True, 
                           random_state=0, early_stopping=True)
 ann_sk_opt.fit(x_train, y_train)
@@ -74,7 +75,8 @@ ann_sk_opt.fit(x_train, y_train)
 
 ## Predicting
 x_test = pv_test[input_cols]
-y_test = pv_test.NRM_P_GEN_MAX
+y_test = pv_test.NRM_P_GEN_MIN
+# y_test = pv_test.NRM_P_GEN_MAX
 
 y_pred_ann_sk = ann_sk.predict(x_test)
 y_pred_ann_sk_opt = ann_sk_opt.predict(x_test)
