@@ -13,8 +13,8 @@ from sklearn.model_selection import GridSearchCV
 
 
 ## Import data
-pv_train = pd.read_csv('YMCA_train.csv')
-pv_test = pd.read_csv('YMCA_test.csv')
+pv_train = pd.read_csv('YMCA_data_train.csv')
+pv_test = pd.read_csv('YMCA_data_test.csv')
 
 input_cols = ['TempOut', 'OutHum', 'WindSpeed', 'Bar', 'SolarRad']
 output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
@@ -48,7 +48,7 @@ max_iter = [500, 1000, 2000]
 learning_rate = ['constant', 'optimal', 'invscaling', 'adaptive']
 
 # Put all hyperparameter into a dict
-random_grid = {
+grid = {
     'estimator__loss': loss,
     'estimator__penalty': penalty,
     'estimator__l1_ratio': l1_ratio,
@@ -58,7 +58,7 @@ random_grid = {
 
 # Search thoroughly for optimised hyperparameter
 sgd_gcv = GridSearchCV(estimator=sgd,
-                        param_grid=random_grid,
+                        param_grid=grid,
                         scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
                         refit='neg_root_mean_squared_error',
                         n_jobs=-1,

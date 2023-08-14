@@ -25,14 +25,14 @@ input_cols = ['TempOut', 'OutHum', 'WindSpeed', 'Bar', 'SolarRad']
 output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
 
 # Bin separation
-# Block (0-3) => BIN 1
-cut_blocks = [i for i in range(1, 9)]
+# Block (1-3) => Bin 1, Block (4-6) => Bin 2, ... Block (22-24) => Bin 8
+bin_nums = [i for i in range(1, 9)]
 
-pv_train['Bin'] = pd.cut(pv_train['Block'], 8, labels = cut_blocks)
+pv_train['Bin'] = pd.cut(pv_train['Block'], 8, labels=bin_nums)
 pv_train.style
-pv_test['Bin'] = pd.cut(pv_test['Block'], 8, labels=cut_blocks)
+pv_test['Bin'] = pd.cut(pv_test['Block'], 8, labels=bin_nums)
 pv_test.style
-pv_test2['Bin'] = pd.cut(pv_test2['Block'], 8, labels=cut_blocks)
+pv_test2['Bin'] = pd.cut(pv_test2['Block'], 8, labels=bin_nums)
 pv_test2.style
 
 
@@ -136,12 +136,12 @@ reg_opt_dict = {
 
 ## Stratified k-Fold Cross Validation
 def stratified_kfcv(input_data):
-    import warnings
-    warnings.filterwarnings("ignore")
-
+    # Split data into 10 folds
     skf = StratifiedKFold(n_splits=10, random_state=23, shuffle=True)
+    # Making new column for kfold labels
     input_data['kfold'] = -1
 
+    # Splitting the 8 bins fairly into the each of the folds to get balanced representation
     for fold,(train_indices, valid_indices) in enumerate(skf.split(X=input_data.iloc[:,:-1], y=input_data['Bin'])):
         input_data.loc[valid_indices, 'kfold'] = fold
 
@@ -182,9 +182,9 @@ def model_comparison(model_list, model_dict, data_train, data_test, max_or_min):
         print('Training results: RMSE, MAE')
         for i in range(10):
             ## Training dataset
-            # k fold block for training
+            # Blocks for training => all other folds
             xtrain = data_train[data_train['kfold'] != i]
-            # k-1 fold blocks for validation
+            # Block for validation => kth fold
             xvalid = data_train[data_train['kfold'] == i]
 
             # getting ML output values

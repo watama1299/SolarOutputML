@@ -11,8 +11,8 @@ from sklearn.model_selection import GridSearchCV
 
 
 ## Import data
-pv_train = pd.read_csv('YMCA_train.csv')
-pv_test = pd.read_csv('YMCA_test.csv')
+pv_train = pd.read_csv('YMCA_data_train.csv')
+pv_test = pd.read_csv('YMCA_data_test.csv')
 
 input_cols = ['TempOut', 'OutHum', 'WindSpeed', 'Bar', 'SolarRad']
 output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
@@ -41,14 +41,16 @@ x_train = pv_train[input_cols]
 y_train = pv_train[output_cols]
 
 # Parameters to search through
+loss = ['squared_error', 'absolute_error', 'huber', 'quantile']
 n_estimators = [100, 250, 500]
 criterion = ['friedman_mse', 'squared_error']
 min_samples_split = [x for x in range(2,15,1)]
-min_samples_leaf = [1, 10, 50, 100, 150, 200, 250]
-max_features = ['sqrt', 'log2']
+min_samples_leaf = [x for x in range(10,300,10)]
+max_features = ['sqrt', 'log2', None]
 
 # Put all hyperparameter into a dict
 random_grid = {
+    'estimator__loss': loss,
     'estimator__n_estimators': n_estimators,
     'estimator__criterion': criterion,
     'estimator__min_samples_split': min_samples_split,
@@ -79,8 +81,9 @@ print('\n\n')
 gb.fit(x_train, y_train)
 gb_opt = MultiOutputRegressor(GradientBoostingRegressor(random_state=0, loss='squared_error',
                                                         criterion='friedman_mse', min_samples_split=2,
-                                                        min_samples_leaf=100, n_estimators=100,
-                                                        max_features='sqrt', n_iter_no_change=10),
+                                                        min_samples_leaf=190, n_estimators=100,
+                                                        max_features=None, n_iter_no_change=10,
+                                                        max_depth=None),
                               n_jobs=-1)
 gb_opt.fit(x_train, y_train)
 

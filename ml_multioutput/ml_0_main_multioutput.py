@@ -7,6 +7,7 @@
 import pandas as pd
 import numpy as np
 import pickle as p
+import warnings as w
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -31,140 +32,26 @@ output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
 
 
 # Bin separation
-# Block (0-8) => BIN 1
-cut_blocks = [i for i in range(1, 9)]
+# Block (1-3) => Bin 1, Block (4-6) => Bin 2, ... Block (22-24) => Bin 8
+bin_nums = [i for i in range(1, 9)]
 
-pv_train['Bin'] = pd.cut(pv_train['Block'], 8, labels=cut_blocks)
+pv_train['Bin'] = pd.cut(pv_train['Block'], 8, labels=bin_nums)
 pv_train.style
-pv_test['Bin'] = pd.cut(pv_test['Block'], 8, labels=cut_blocks)
+pv_test['Bin'] = pd.cut(pv_test['Block'], 8, labels=bin_nums)
 pv_test.style
-pv_test2['Bin'] = pd.cut(pv_test2['Block'], 8, labels=cut_blocks)
+pv_test2['Bin'] = pd.cut(pv_test2['Block'], 8, labels=bin_nums)
 pv_test2.style
-
-
-
-## Setup Pipeline
-## Without hyperparameter optimisation
-# Linear regression
-model_ln = Pipeline([('lin_regression', MultiOutputRegressor(LinearRegression(), n_jobs=-1))])
-# Tree regression
-model_dt = Pipeline([('dt_regression', MultiOutputRegressor(DecisionTreeRegressor(random_state=0), n_jobs=-1))])
-# Linear Support Vector regression
-model_svr = Pipeline([('svm_regression', MultiOutputRegressor(LinearSVR(random_state=0), n_jobs=-1))])
-# Ensemble regression
-model_grb = Pipeline([('gradboost_regression', MultiOutputRegressor(GradientBoostingRegressor(random_state=0), n_jobs=-1))])
-# ANN model
-model_ann = Pipeline([('ann_sk', MLPRegressor(solver='adam', random_state=0,
-                                              shuffle=True, early_stopping=True))])
-models = [
-    model_ln,
-    model_dt,
-    model_svr,
-    model_grb,
-    model_ann
-]
-reg_dict = {
-    0: 'Linear',
-    1: 'Decision Tree',
-    2: 'Linear SVM',
-    3: 'Gradient Boost',
-    4: 'ANN'
-}
-
-## With hyperparameter optimisation
-# Lasso regression
-model_lasso_opt = Pipeline([('lasso_opt', MultiOutputRegressor(Lasso(max_iter=500,
-                                                                     random_state=0,
-                                                                     selection='cyclic'),
-                                                               n_jobs=-1))])
-model_mlasso_opt = Pipeline([('mlasso_opt', MultiTaskLasso(max_iter=500,
-                                                           random_state=0,
-                                                           selection='cyclic'))])
-# ElasticNet regression
-model_eln_opt = Pipeline([('eln_opt', MultiOutputRegressor(ElasticNet(l1_ratio=0.2,
-                                                                      max_iter=500,
-                                                                      random_state=0,
-                                                                      selection='cyclic'),
-                                                           n_jobs=-1))])
-model_meln_opt = Pipeline([('meln_opt', MultiTaskElasticNet(l1_ratio=0.23,
-                                                            max_iter=500,
-                                                            random_state=0,
-                                                            selection='cyclic'))])
-# Tree regression
-model_dt_opt = Pipeline([('dt_opt', MultiOutputRegressor(DecisionTreeRegressor(criterion='squared_error',
-                                                                               splitter='random',
-                                                                               min_samples_split=2,
-                                                                               min_samples_leaf=38,
-                                                                               max_features='auto',
-                                                                               random_state=0),
-                                                         n_jobs=-1))])
-# Linear Support Vector regression
-model_svr_opt = Pipeline([('svm_opt', MultiOutputRegressor(LinearSVR(loss='squared_epsilon_insensitive',
-                                                                     dual=False,
-                                                                     random_state=0,
-                                                                     max_iter=1000),
-                                                           n_jobs=-1))])
-# Nu Support Vector regression
-model_nusvr_opt = Pipeline([('nusvr_opt', MultiOutputRegressor(NuSVR(nu=0.42,
-                                                                     kernel='rbf',
-                                                                     gamma='scale',
-                                                                     cache_size=1000,
-                                                                     max_iter=-1),
-                                                               n_jobs=-1))])
-# Ensemble regression
-model_grb_opt = Pipeline([('gradboost_opt', MultiOutputRegressor(GradientBoostingRegressor(loss='squared_error',
-                                                                                           n_estimators=100,
-                                                                                           criterion='friedman_mse',
-                                                                                           min_samples_split=2,
-                                                                                           min_samples_leaf=100,
-                                                                                           max_depth=None,
-                                                                                           random_state=0,
-                                                                                           max_features='sqrt',
-                                                                                           n_iter_no_change=10),
-                                                                 n_jobs=-1))])
-# ANN model
-model_ann_opt = Pipeline([('ann_sk_opt', MLPRegressor(hidden_layer_sizes=(100,100,),
-                                                      activation='logistic',
-                                                      solver='adam',
-                                                      max_iter=200,
-                                                      shuffle=True,
-                                                      random_state=0,
-                                                      early_stopping=True))])
-models_opt = [
-    model_ln,
-    model_lasso_opt,
-    model_mlasso_opt,
-    model_eln_opt,
-    model_meln_opt,
-    model_dt_opt,
-    model_svr_opt,
-    model_nusvr_opt,
-    model_grb_opt,
-    model_ann_opt
-]
-reg_opt_dict = {
-    0: 'Linear',
-    1: 'Lasso',
-    2: 'MultiLasso',
-    3: 'ElasticNet',
-    4: 'MultiElasticNet',
-    5: 'Decision Tree',
-    6: 'Linear SVM',
-    7: 'NuSVM',
-    8: 'Gradient Boost',
-    9: 'ANN'
-}
 
 
 
 ## Stratified k-Fold Cross Validation
 def stratified_kfcv(input_data):
-    import warnings
-    warnings.filterwarnings("ignore")
-
+    # Split data into 10 folds
     skf = StratifiedKFold(n_splits=10, random_state=23, shuffle=True)
+    # Making new column for kfold labels
     input_data['kfold'] = -1
 
+    # Splitting the 8 bins fairly into the each of the folds to get balanced representation
     for fold,(train_indices, valid_indices) in enumerate(skf.split(X=input_data.iloc[:,:-1], y=input_data['Bin'])):
         input_data.loc[valid_indices, 'kfold'] = fold
 
@@ -205,9 +92,9 @@ def model_comparison(model_list, model_dict, data_train, data_test):
         print('Training results: RMSE, MAE')
         for i in range(10):
             ## Training dataset
-            # k fold block for training
+            # Blocks for training => all other folds
             xtrain = data_train[data_train['kfold'] != i]
-            # k-1 fold blocks for validation
+            # Block for validation => kth fold
             xvalid = data_train[data_train['kfold'] == i]
 
             # getting ML output values
@@ -362,6 +249,7 @@ def model_comparison(model_list, model_dict, data_train, data_test):
             best_mae_regressor = j
 
         ## Add trained model to list of all models trained
+        # key: model, value: model_trained
         all_models[model_dict[j]] = model_trained
 
     print('-----------------------------------------------------')
@@ -377,54 +265,156 @@ def model_comparison(model_list, model_dict, data_train, data_test):
 
 
 
+## Setup Pipeline
+## Without hyperparameter optimisation
+# Linear regression
+model_ln = MultiOutputRegressor(LinearRegression(), n_jobs=-1)
+# Tree regression
+model_dt = MultiOutputRegressor(DecisionTreeRegressor(random_state=0),
+                                n_jobs=-1)
+# Linear Support Vector regression
+model_svr = MultiOutputRegressor(LinearSVR(random_state=0),
+                                 n_jobs=-1)
+# Ensemble regression
+model_grb = MultiOutputRegressor(GradientBoostingRegressor(random_state=0),
+                                 n_jobs=-1)
+# ANN model
+model_ann = MLPRegressor(solver='adam', random_state=0, 
+                         shuffle=True, early_stopping=True)
+models = [
+    model_ln,
+    model_dt,
+    model_svr,
+    model_grb,
+    model_ann
+]
+reg_dict = {
+    0: 'Linear',
+    1: 'Decision Tree',
+    2: 'Linear SVM',
+    3: 'Gradient Boost',
+    4: 'ANN'
+}
+
+## With hyperparameter optimisation
+# Lasso regression
+model_lasso_opt = MultiOutputRegressor(Lasso(max_iter=500,
+                                            random_state=0,
+                                            selection='cyclic'),
+                                       n_jobs=-1)
+model_mlasso_opt = MultiTaskLasso(max_iter=500,
+                                  random_state=0,
+                                  selection='cyclic')
+# ElasticNet regression
+model_eln_opt = MultiOutputRegressor(ElasticNet(l1_ratio=0.2,
+                                                max_iter=500,
+                                                random_state=0,
+                                                selection='cyclic'),
+                                     n_jobs=-1)
+model_meln_opt = MultiTaskElasticNet(l1_ratio=0.23,
+                                     max_iter=500,
+                                     random_state=0,
+                                     selection='cyclic')
+# Tree regression
+model_dt_opt = MultiOutputRegressor(DecisionTreeRegressor(criterion='squared_error',
+                                                          splitter='random',
+                                                          min_samples_split=2,
+                                                          min_samples_leaf=38,
+                                                          max_features=None,
+                                                          random_state=0),
+                                    n_jobs=-1)
+# Linear Support Vector regression
+model_svr_opt = MultiOutputRegressor(LinearSVR(loss='squared_epsilon_insensitive',
+                                               dual=False,
+                                               random_state=0,
+                                               max_iter=1000),
+                                     n_jobs=-1)
+# Nu Support Vector regression
+model_nusvr_opt = MultiOutputRegressor(NuSVR(nu=0.42,
+                                             kernel='poly',
+                                             gamma='scale',
+                                             cache_size=1000,
+                                             max_iter=-1),
+                                       n_jobs=-1)
+# Ensemble regression
+model_grb_opt = MultiOutputRegressor(GradientBoostingRegressor(loss='squared_error',
+                                                               n_estimators=100,
+                                                               criterion='friedman_mse',
+                                                               min_samples_split=2,
+                                                               min_samples_leaf=190,
+                                                               max_depth=None,
+                                                               random_state=0,
+                                                               max_features=None,
+                                                               n_iter_no_change=10),
+                                     n_jobs=-1)
+# ANN model
+model_ann_opt = MLPRegressor(hidden_layer_sizes=(100,100,),
+                             activation='logistic',
+                             solver='adam',
+                             max_iter=200,
+                             shuffle=True,
+                             random_state=0,
+                             early_stopping=True)
+models_opt = [
+    model_ln,
+    model_lasso_opt,
+    model_mlasso_opt,
+    model_eln_opt,
+    model_meln_opt,
+    model_dt_opt,
+    model_svr_opt,
+    model_nusvr_opt,
+    model_grb_opt,
+    model_ann_opt
+]
+reg_opt_dict = {
+    0: 'Linear',
+    1: 'Lasso',
+    2: 'MultiLasso',
+    3: 'ElasticNet',
+    4: 'MultiElasticNet',
+    5: 'Decision Tree',
+    6: 'Linear SVM',
+    7: 'NuSVM',
+    8: 'Gradient Boost',
+    9: 'ANN'
+}
+
+
+
+w.filterwarnings('ignore')
 ## Initial comparison
 print('-----------------------------------------------------')
 print('Initial comparison')
 print('-----------------------------------------------------')
 out_models_init = model_comparison(models, reg_dict, pv_train, pv_test)
-# best_model_init = p.loads(out_models_init.get('Linear').get('normal'))
-# best_model_init = p.loads(out_models_init.get('Decision Tree').get('normal'))
-# best_model_init = p.loads(out_models_init.get('Linear SVM').get('normal'))
-# best_model_init = p.loads(out_models_init.get('Gradient Boost').get('normal'))
-best_model_init = p.loads(out_models_init.get('ANN').get('normal'))
-y_init = best_model_init.predict(pv_test[input_cols])
-y_init = pd.DataFrame(y_init, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
-# y_init.to_csv('y_init_mo.csv', index=False)
+for trained_models in out_models_init.values():
+    best_model_init = p.loads(trained_models.get('normal'))
+    y_init = best_model_init.predict(pv_test[input_cols])
+    y_init = pd.DataFrame(y_init, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
+    # y_init.to_csv('y_init_mo_{}.csv'.format(trained_models.get('name')), index=False)
+    # print('Model type {} has successfully exported its initial output'.format(trained_models.get('name')))
 
 ## Optimised comparison
 print('-----------------------------------------------------')
 print('Optimised comparison')
 print('-----------------------------------------------------')
 out_models_opt = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test)
-# best_model_opt = p.loads(out_models_opt.get('Linear').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('Lasso').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('MultiLasso').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('ElasticNet').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('MultiElasticNet').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('Decision Tree').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('Linear SVM').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('NuSVM').get('normal'))
-# best_model_opt = p.loads(out_models_opt.get('Gradient Boost').get('normal'))
-best_model_opt = p.loads(out_models_opt.get('ANN').get('normal'))
-y_opt = best_model_opt.predict(pv_test[input_cols])
-y_opt = pd.DataFrame(y_opt, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
-# y_opt.to_csv('y_opt_mo.csv', index=False)
+for trained_models in out_models_opt.values():
+    best_model_opt = p.loads(trained_models.get('normal'))
+    y_opt = best_model_opt.predict(pv_test[input_cols])
+    y_opt = pd.DataFrame(y_opt, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
+    # y_opt.to_csv('y_opt_mo_{}.csv'.format(trained_models.get('name')), index=False)
+    # print('Model type {} has successfully exported its optimised output'.format(trained_models.get('name')))
 
 ## Predicting FR site using models trained on YMCA site
 print('-----------------------------------------------------')
 print('Optimised models trained on YMCA, tested on FR')
 print('-----------------------------------------------------')
 out_models_fr = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test2)
-# best_model_fr = p.loads(out_models_fr.get('Linear').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('Lasso').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('MultiLasso').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('ElasticNet').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('MultiElasticNet').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('Decision Tree').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('Linear SVM').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('NuSVM').get('normal'))
-# best_model_fr = p.loads(out_models_fr.get('Gradient Boost').get('normal'))
-best_model_fr = p.loads(out_models_fr.get('ANN').get('normal'))
-y_fr = best_model_fr.predict(pv_test2[input_cols])
-y_fr = pd.DataFrame(y_fr, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
-# y_fr.to_csv('y_fr_mo.csv', index=False)
+for trained_models in out_models_fr.values():
+    best_model_fr = p.loads(trained_models.get('normal'))
+    y_fr = best_model_fr.predict(pv_test2[input_cols])
+    y_fr = pd.DataFrame(y_fr, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
+    # y_fr.to_csv('y_fr_mo_{}.csv'.format(trained_models.get('name')), index=False)
+    # print('Model type {} has successfully exported its Forest Road output'.format(trained_models.get('name')))

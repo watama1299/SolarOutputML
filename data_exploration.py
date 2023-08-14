@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 ## Read csv files
 pv_combined = pd.read_csv('YMCA_data_combined.csv')
-print(pv_combined.describe())
+# print(pv_combined.describe())
 
 
 ## Data analysis
@@ -42,8 +42,19 @@ p5 = sns.pairplot(pv_combined,
                   x_vars=['P_GEN_MIN','P_GEN_MAX'],  
                   kind='reg',
                   plot_kws={'line_kws':{'color':'red'}})
+"""
+p6 = sns.pairplot(pv_combined,
+                  y_vars=['TempOut','OutHum','DewPt',
+                          'WindSpeed','WindRun','WindChill',
+                          'HeatIndex','THWIndex',
+                          'Bar','Rain','RainRate',
+                          'SolarRad','SolarEnergy','HiSolarRad'], 
+                  x_vars=['P_GEN_MIN','P_GEN_MAX'],  
+                  kind='reg',
+                  plot_kws={'line_kws':{'color':'red'}})
+"""
 plt.show()
 
 ## Using heat map to find correlation
-h1 = sns.heatmap(pv_combined.corr(), annot=True)
+h1 = sns.heatmap(pv_combined.corr(numeric_only=True), annot=True)
 plt.show()

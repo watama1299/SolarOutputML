@@ -9,8 +9,8 @@ from sklearn.model_selection import GridSearchCV
 
 
 ## Import data
-pv_train = pd.read_csv('YMCA_train.csv')
-pv_test = pd.read_csv('YMCA_test.csv')
+pv_train = pd.read_csv('YMCA_data_train.csv')
+pv_test = pd.read_csv('YMCA_data_test.csv')
 
 input_cols = ['TempOut', 'OutHum', 'WindSpeed', 'Bar', 'SolarRad']
 output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
@@ -39,10 +39,10 @@ criterion = ['squared_error', 'friedman_mse', 'absolute_error', 'poisson']
 splitter = ['best', 'random']
 min_samples_split = [x for x in range(2,15,1)]
 min_samples_leaf = [x for x in range(1,50,1)]
-max_features = ['auto', 'sqrt', 'log2']
+max_features = ['auto', 'sqrt', 'log2', None]
 
 # Put all hyperparameter into a dict
-random_grid = {
+grid = {
     # 'estimator__criterion': criterion,
     'estimator__splitter': splitter,
     'estimator__min_samples_split': min_samples_split,
@@ -52,7 +52,7 @@ random_grid = {
 
 # Search thoroughly for optimised hyperparameter
 dt_gcv = GridSearchCV(estimator=dt,
-                        param_grid=random_grid,
+                        param_grid=grid,
                         scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
                         refit='neg_root_mean_squared_error',
                         n_jobs=-1,

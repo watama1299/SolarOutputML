@@ -13,8 +13,8 @@ from sklearn.model_selection import GridSearchCV
 
 
 ## Import data
-pv_train = pd.read_csv('YMCA_train.csv')
-pv_test = pd.read_csv('YMCA_test.csv')
+pv_train = pd.read_csv('YMCA_data_train.csv')
+pv_test = pd.read_csv('YMCA_data_test.csv')
 
 input_cols = ['TempOut', 'OutHum', 'WindSpeed', 'Bar', 'SolarRad']
 output_cols = ['NRM_P_GEN_MIN', 'NRM_P_GEN_MAX']
@@ -46,18 +46,18 @@ max_iter = [500, 1000, 2000, 5000]
 selection = ['cyclic', 'random']
 
 # Put all hyperparameter into a dict
-random_grid = {
+grid_l = {
     'estimator__max_iter': max_iter,
     'estimator__selection': selection,
 }
-rg = {
+grid_ml = {
     'max_iter': max_iter,
     'selection': selection
 }
 
 # Search thoroughly for optimised hyperparameter
 lasso_gcv = GridSearchCV(estimator=lasso,
-                        param_grid=random_grid,
+                        param_grid=grid_l,
                         scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
                         refit='neg_root_mean_squared_error',
                         n_jobs=-1,
@@ -72,7 +72,7 @@ print('\n\n')
 
 # Search thoroughly for optimised hyperparameter
 ls_gcv = GridSearchCV(estimator=ls,
-                        param_grid=rg,
+                        param_grid=grid_ml,
                         scoring=['neg_root_mean_squared_error','neg_mean_absolute_error'],
                         refit='neg_root_mean_squared_error',
                         n_jobs=-1,
