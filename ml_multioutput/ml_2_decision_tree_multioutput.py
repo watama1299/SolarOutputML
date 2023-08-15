@@ -39,7 +39,7 @@ criterion = ['squared_error', 'friedman_mse', 'absolute_error', 'poisson']
 splitter = ['best', 'random']
 min_samples_split = [x for x in range(2,15,1)]
 min_samples_leaf = [x for x in range(1,50,1)]
-max_features = ['auto', 'sqrt', 'log2', None]
+max_features = ['sqrt', 'log2', None]
 
 # Put all hyperparameter into a dict
 grid = {

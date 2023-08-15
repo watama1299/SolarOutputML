@@ -89,7 +89,7 @@ def model_comparison(model_list, model_dict, data_train, data_test):
         best_model_overall = b''
         best_model_rmse = b''
         best_model_mae = b''
-        print('Training results: RMSE, MAE')
+        # print('Training results: RMSE, MAE')
         for i in range(10):
             ## Training dataset
             # Blocks for training => all other folds
@@ -119,7 +119,7 @@ def model_comparison(model_list, model_dict, data_train, data_test):
             RMSE_train.append(rmse_cv)
             mae_cv = mean_absolute_error(yvalid, ypred)
             MAE_train.append(mae_cv)
-            print('Fold {}: {}, {}'.format(i+1, rmse_cv, mae_cv))
+            # print('Fold {}: {}, {}'.format(i+1, rmse_cv, mae_cv))
 
             # capture best model found during CV
             if rmse_cv < min_rmse and mae_cv < min_mae:
@@ -253,9 +253,9 @@ def model_comparison(model_list, model_dict, data_train, data_test):
         all_models[model_dict[j]] = model_trained
 
     print('-----------------------------------------------------')
-    print('Regressor with least RMSE: {}'.format(model_dict[best_rmse_regressor]))
-    print('Regressor with least MAE: {}'.format(model_dict[best_mae_regressor]))
     print('Best regressor: {}'.format(model_dict[best_regressor]))
+    print('Regressor with best RMSE: {}'.format(model_dict[best_rmse_regressor]))
+    print('Regressor with best MAE: {}'.format(model_dict[best_mae_regressor]))
     # print(best_pipeline)
     print('-----------------------------------------------------')
     print('\n\n\n')
@@ -385,36 +385,36 @@ reg_opt_dict = {
 w.filterwarnings('ignore')
 ## Initial comparison
 print('-----------------------------------------------------')
-print('Initial comparison')
+print('Initial comparison, tested on YMCA testing dataset')
 print('-----------------------------------------------------')
 out_models_init = model_comparison(models, reg_dict, pv_train, pv_test)
-for trained_models in out_models_init.values():
-    best_model_init = p.loads(trained_models.get('normal'))
-    y_init = best_model_init.predict(pv_test[input_cols])
-    y_init = pd.DataFrame(y_init, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
-    # y_init.to_csv('y_init_mo_{}.csv'.format(trained_models.get('name')), index=False)
-    # print('Model type {} has successfully exported its initial output'.format(trained_models.get('name')))
+# for trained_models in out_models_init.values():
+#     best_model_init = p.loads(trained_models.get('normal'))
+#     y_init = best_model_init.predict(pv_test[input_cols])
+#     y_init = pd.DataFrame(y_init, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
+#     # y_init.to_csv('y_init_mo_{}.csv'.format(trained_models.get('name')), index=False)
+#     # print('Model type {} has successfully exported its initial output'.format(trained_models.get('name')))
 
 ## Optimised comparison
 print('-----------------------------------------------------')
-print('Optimised comparison')
+print('Optimised comparison, tested on YMCA testing dataset')
 print('-----------------------------------------------------')
 out_models_opt = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test)
-for trained_models in out_models_opt.values():
-    best_model_opt = p.loads(trained_models.get('normal'))
-    y_opt = best_model_opt.predict(pv_test[input_cols])
-    y_opt = pd.DataFrame(y_opt, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
-    # y_opt.to_csv('y_opt_mo_{}.csv'.format(trained_models.get('name')), index=False)
-    # print('Model type {} has successfully exported its optimised output'.format(trained_models.get('name')))
+# for trained_models in out_models_opt.values():
+#     best_model_opt = p.loads(trained_models.get('normal'))
+#     y_opt = best_model_opt.predict(pv_test[input_cols])
+#     y_opt = pd.DataFrame(y_opt, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
+#     # y_opt.to_csv('y_opt_mo_{}.csv'.format(trained_models.get('name')), index=False)
+#     # print('Model type {} has successfully exported its optimised output'.format(trained_models.get('name')))
 
 ## Predicting FR site using models trained on YMCA site
 print('-----------------------------------------------------')
-print('Optimised models trained on YMCA, tested on FR')
+print('Optimised models, tested on FR testing dataset')
 print('-----------------------------------------------------')
 out_models_fr = model_comparison(models_opt, reg_opt_dict, pv_train, pv_test2)
-for trained_models in out_models_fr.values():
-    best_model_fr = p.loads(trained_models.get('normal'))
-    y_fr = best_model_fr.predict(pv_test2[input_cols])
-    y_fr = pd.DataFrame(y_fr, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
-    # y_fr.to_csv('y_fr_mo_{}.csv'.format(trained_models.get('name')), index=False)
-    # print('Model type {} has successfully exported its Forest Road output'.format(trained_models.get('name')))
+# for trained_models in out_models_fr.values():
+#     best_model_fr = p.loads(trained_models.get('normal'))
+#     y_fr = best_model_fr.predict(pv_test2[input_cols])
+#     y_fr = pd.DataFrame(y_fr, columns=['PRED_NRM_P_GEN_MIN', 'PRED_NRM_P_GEN_MAX'])
+#     # y_fr.to_csv('y_fr_mo_{}.csv'.format(trained_models.get('name')), index=False)
+#     # print('Model type {} has successfully exported its Forest Road output'.format(trained_models.get('name')))

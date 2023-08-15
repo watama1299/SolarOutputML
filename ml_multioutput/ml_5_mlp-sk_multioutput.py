@@ -37,7 +37,6 @@ y_train = pv_train[output_cols]
 
 # Parameters to search through
 hidden_layer_sizes = [(100,), (50,), (10,), (5,), (100,100,), (50,50,), (10,10,), (5,5,)]
-# hidden_layer_sizes = [(110, 110,), (100, 100,), (90, 90,)]
 activation = ['identity', 'logistic', 'tanh', 'relu']
 max_iter = [200, 500, 1000]
 
