@@ -10,7 +10,6 @@ import pickle as p
 import warnings as w
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.linear_model import LinearRegression, Lasso, ElasticNet, MultiTaskLasso, MultiTaskElasticNet
@@ -115,9 +114,9 @@ def model_comparison(model_list, model_dict, data_train, data_test):
             ypred = model.predict(xvalid)
 
             # scoring using training dataset
-            rmse_cv = mean_squared_error(yvalid, ypred, squared=False)
+            rmse_cv = mean_squared_error(y_true=yvalid, y_pred=ypred, squared=False)
             RMSE_train.append(rmse_cv)
-            mae_cv = mean_absolute_error(yvalid, ypred)
+            mae_cv = mean_absolute_error(y_true=yvalid, y_pred=ypred)
             MAE_train.append(mae_cv)
             # print('Fold {}: {}, {}'.format(i+1, rmse_cv, mae_cv))
 
@@ -166,10 +165,10 @@ def model_comparison(model_list, model_dict, data_train, data_test):
         normal = model.fit(x_train, y_train)
         yn_pred = normal.predict(x_test)
         print('\nTest data scoring using normal model')
-        yn_rmse = mean_squared_error(y_test, yn_pred, squared=False)
+        yn_rmse = mean_squared_error(y_true=y_test, y_pred=yn_pred, squared=False)
         model_rmse.append(yn_rmse)
         print('RMSE: {}'.format(yn_rmse))
-        yn_mae = mean_absolute_error(y_test, yn_pred)
+        yn_mae = mean_absolute_error(y_true=y_test, y_pred=yn_pred)
         model_mae.append(yn_mae)
         print('MAE: {}'.format(yn_mae))
 
@@ -177,10 +176,10 @@ def model_comparison(model_list, model_dict, data_train, data_test):
         overall_best = p.loads(best_model_overall)
         ybo_pred = overall_best.predict(x_test)
         print('Test data scoring using best fit model from CV')
-        ybo_rmse = mean_squared_error(y_test, ybo_pred, squared=False)
+        ybo_rmse = mean_squared_error(y_true=y_test, y_pred=ybo_pred, squared=False)
         model_rmse.append(ybo_rmse)
         print('RMSE: {}'.format(ybo_rmse))
-        ybo_mae = mean_absolute_error(y_test, ybo_pred)
+        ybo_mae = mean_absolute_error(y_true=y_test, y_pred=ybo_pred)
         model_mae.append(ybo_mae)
         print('MAE: {}'.format(ybo_mae))
 
@@ -188,10 +187,10 @@ def model_comparison(model_list, model_dict, data_train, data_test):
         rmse_best = p.loads(best_model_rmse)
         ybr_pred = rmse_best.predict(x_test)
         print('Test data scoring using best RMSE model from CV')
-        ybr_rmse = mean_squared_error(y_test, ybr_pred, squared=False)
+        ybr_rmse = mean_squared_error(y_true=y_test, y_pred=ybr_pred, squared=False)
         model_rmse.append(ybr_rmse)
         print('RMSE: {}'.format(ybr_rmse))
-        ybr_mae = mean_absolute_error(y_test, ybr_pred)
+        ybr_mae = mean_absolute_error(y_true=y_test, y_pred=ybr_pred)
         model_mae.append(ybr_mae)
         print('MAE: {}'.format(ybr_mae))
 
@@ -199,10 +198,10 @@ def model_comparison(model_list, model_dict, data_train, data_test):
         mae_best = p.loads(best_model_mae)
         ybm_pred = mae_best.predict(x_test)
         print('Test data scoring using best MAE model from CV')
-        ybm_rmse = mean_squared_error(y_test, ybm_pred, squared=False)
+        ybm_rmse = mean_squared_error(y_true=y_test, y_pred=ybm_pred, squared=False)
         model_rmse.append(ybm_rmse)
         print('RMSE: {}'.format(ybm_rmse))
-        ybm_mae = mean_absolute_error(y_test, ybm_pred)
+        ybm_mae = mean_absolute_error(y_true=y_test, y_pred=ybm_pred)
         model_mae.append(ybm_mae)
         print('MAE: {}\n\n'.format(ybm_mae))
 
@@ -299,8 +298,8 @@ reg_dict = {
 ## With hyperparameter optimisation
 # Lasso regression
 model_lasso_opt = MultiOutputRegressor(Lasso(max_iter=500,
-                                            random_state=0,
-                                            selection='cyclic'),
+                                             random_state=0,
+                                             selection='cyclic'),
                                        n_jobs=-1)
 model_mlasso_opt = MultiTaskLasso(max_iter=500,
                                   random_state=0,
